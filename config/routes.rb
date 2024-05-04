@@ -10,7 +10,9 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v0 do
-      post "/customers/:id/subscriptions", to: "subscriptions#create"
+      resources :customers do
+        resources :subscriptions, only: :create
+      end
     end
   end
 end
