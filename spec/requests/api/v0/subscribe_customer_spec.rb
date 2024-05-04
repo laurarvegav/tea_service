@@ -14,7 +14,7 @@ RSpec.describe "Subscribe a customer to a tea subscription" do
     }
 
     @bad_user_data_2 = {
-      email: "test@email.com",
+      email: "unexistent@email.com",
       password: "abc123",
       tea_service: ""
     }
@@ -25,74 +25,51 @@ RSpec.describe "Subscribe a customer to a tea subscription" do
       tea_service: "atlas"
     }
 
-    @user_ok_1 = User.new({email: "test@woohoo.com", f_name:, l_name:, address: })
+    @user_ok_1 = Customer.create!({email: "test@woohoo.com", f_name: "Charlie", l_name: "Za", address: "123 St, Fun CO, 80021", password: "123test"})
+
+    @subscription_ok_1 = Subscription.create!({title: "atlas", price: 12.2, frequency: "bi-weekly"})
   end
   
   describe '#happy path' do
   it "can subscribe a customer to a new service" do
     post "/api/v0/customers/#{@user_ok_1.id}/subscriptions", params: @user_data, as: :json
-    
-    new_cust_sub = CustomerSubscription.last
-      response_data = JSON.parse(response.body, symbolize_names: true)
 
-      expect(new_cust_sub.status).to eq(0)
+    response_data = JSON.parse(response.body, symbolize_names: true)
 
-      expect(response.status).to eq(201)
-      check_hash_structure(response_data, :data, Hash)
-      check_hash_structure(response_data[:data], :type, String)
-      check_hash_structure(response_data[:data], :id, String)
-      check_hash_structure(response_data[:data], :attributes, Hash)
-      # check_hash_structure(response_data[:data][:attributes], :email, String)
-      # check_hash_structure(response_data[:data][:attributes], :api_key, String)
+    expect(response.status).to eq(200)
+    expect(response_data[:message]).to eq("Subscription successfully added to Customer")
     end
   end
 
-#   describe '#sad path' do
-#     it "will return the correct error message and be unsuccessful if the passwords don't match", :vcr do
-#       post "/api/v0/users", params:  @bad_user_data_1, as: :json
+  describe '#sad path' do
+    it "sends an error when a client tries to add a subscription that they already have" do
+      CustomerSubscription.create!({subscription: @subscription_ok_1, customer: @user_ok_1})
       
-#       expect(response).not_to be_successful
+      post "/api/v0/customers/#{@user_ok_1.id}/subscriptions", params: @bad_user_data_3, as: :json
 
-#       error_response = JSON.parse(response.body, symbolize_names: true)
+      expect(response).not_to be_successful
 
-#       check_hash_structure(error_response, :errors, Array)
+      error_response = JSON.parse(response.body, symbolize_names: true)
 
-#       errors = error_response[:errors].first
+      expect(error_response).to have_key(:errors)
+      expect(error_response[:errors]).to be_a(Array)
 
-#       check_hash_structure(errors, :detail, String)
-#       expect(errors[:detail]).to eq("Validation failed: Password confirmation doesn't match Password")
-#     end
+      expect(error_response[:errors].first).to have_key(:detail)
+      expect(error_response[:errors].first[:detail]).to eq("Validation failed: Customer has already been taken")
+    end
 
-#     it "will return the correct error message and be unsuccessful if any attribute is left blank", :vcr do
-#       post "/api/v0/users", params: @bad_user_data_2, as: :json 
+    it "errors with an invalid" do 
+      post "/api/v0/customers/#{@user_ok_1.id}/subscriptions", params: @bad_user_data_1, as: :json
 
-#       expect(response).not_to be_successful
+      
+      expect(response).to_not be_successful
 
-#       error_response = JSON.parse(response.body, symbolize_names: true)
+      expect(response.status).to eq(404)
+  
+      data = JSON.parse(response.body, symbolize_names: true)
 
-#       check_hash_structure(error_response, :errors, Array)
-
-#       errors = error_response[:errors].first
-
-#       check_hash_structure(errors, :detail, String)
-#       expect(errors[:detail]).to eq("Validation failed: Password confirmation doesn't match Password")
-#     end
-
-#     it "will return the correct error message and be unsuccessful if the email is already associated to a user", :vcr do
-#       post "/api/v0/users", params: @user_data, as: :json
-
-#       post "/api/v0/users", params: @bad_user_data_3, as: :json
-
-#       expect(response).not_to be_successful
-
-#       error_response = JSON.parse(response.body, symbolize_names: true)
-
-#       check_hash_structure(error_response, :errors, Array)
-
-#       errors = error_response[:errors].first
-
-#       check_hash_structure(errors, :detail, String)
-#       expect(errors[:detail]).to eq("Validation failed: Email has already been taken, Password confirmation doesn't match Password")
-#     end
-#   end
+      expect(data[:errors]).to be_a(Array)
+      expect(data[:errors].first[:detail]).to eq("Validation failed: Subscription must exist")
+    end
+  end
 end
