@@ -1,4 +1,4 @@
-# TattDaddy
+# Tea Service
 
 ## Table of Contents
 - [Getting Started](#getting-started)
