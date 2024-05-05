@@ -44,11 +44,10 @@ This app was built to complete the BE take home challenge for MOD 4 2311, from T
 <details>
   <summary>Database Schema</summary>
   <img src="./app/assets/images/schema.png"
-     alt="Database Schema"
-     style="float: left; margin-right: 10px;" /><br>
+     alt="Database Schema" /><br>
 </details>
 
-# Endpoints
+## Endpoints
 <details>
 <summary>Subscribe a Customer to a Tea Subscription</summary>
 Request:
